@@ -7,6 +7,7 @@ pipeline {
     JTEST_HOME                 = 'C:/Parasoft/jtest'
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
+    MAVEN_OPTS = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
   }
   stages {
     // ── シナリオA：featureブランチへのpush（PRでもmainでもないビルド） ──
@@ -18,7 +19,12 @@ pipeline {
         }
       }
       steps {
-        powershell '.\\mvnw -B -q compile'
+        powershell '''
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+          chcp 65001 > $null
+          .\\mvnw -B -q compile
+          '''
       }
     }
     stage('A: Diff-Scoped Static Analysis') {
@@ -32,7 +38,12 @@ pipeline {
         JTEST_REFERENCE_BRANCH = 'main'
       }
       steps {
-        powershell '.\\mvnw jtest:jtest "-Djtest.report=build/jtest"'
+        powershell '''
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+          chcp 65001 > $null
+          .\\mvnw jtest:jtest "-Djtest.report=build/jtest"
+        '''
       }
     }
     // stage('A: Report to GitHub Check') {
@@ -56,6 +67,9 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
           powershell '''
+            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+            $OutputEncoding = [System.Text.Encoding]::UTF8
+            chcp 65001 > $null
             $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
             .\\scripts\\start_agent.bat copilot -p $prompt
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:GH_USER}:${env:GH_TOKEN}@"
