@@ -8,7 +8,7 @@ pipeline {
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
     JAVA_TOOL_OPTIONS          = '-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
-    MAVEN_OPTS = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
+    MAVEN_OPTS                 = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8'
   }
   stages {
     // ── シナリオA：featureブランチへのpush（PRでもmainでもないビルド） ──
