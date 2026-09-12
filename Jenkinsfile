@@ -39,11 +39,9 @@ pipeline {
         JTEST_REFERENCE_BRANCH = 'main'
       }
       steps {
-        powershell '''
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $OutputEncoding = [System.Text.Encoding]::UTF8
-          chcp 65001 > $null
-          .\\mvnw jtest:jtest "-Djtest.report=build/jtest"
+        bat '''
+          chcp 65001 > NUL
+          mvnw.cmd jtest:jtest "-Djtest.report=build/jtest"
         '''
       }
     }
