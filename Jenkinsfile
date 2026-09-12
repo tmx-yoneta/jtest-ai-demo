@@ -7,8 +7,8 @@ pipeline {
     JTEST_HOME                 = 'C:/Parasoft/jtest'
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
-    JAVA_TOOL_OPTIONS          = '-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
-    MAVEN_OPTS                 = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8'
+    JAVA_TOOL_OPTIONS          = ''
+    MAVEN_OPTS                 = '-Dfile.encoding=MS932'
   }
   stages {
     // ── シナリオA：featureブランチへのpush（PRでもmainでもないビルド） ──
@@ -21,9 +21,6 @@ pipeline {
       }
       steps {
         powershell '''
-          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-          $OutputEncoding = [System.Text.Encoding]::UTF8
-          chcp 65001 > $null
           .\\mvnw -B -q compile
           '''
       }
@@ -40,7 +37,6 @@ pipeline {
       }
       steps {
         bat '''
-          chcp 65001 > NUL
           mvnw.cmd jtest:jtest "-Djtest.report=build/jtest"
         '''
       }
@@ -66,9 +62,6 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'GH_USER', passwordVariable: 'GH_TOKEN')]) {
           powershell '''
-            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-            $OutputEncoding = [System.Text.Encoding]::UTF8
-            chcp 65001 > $null
             $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
             .\\scripts\\start_agent.bat copilot -p $prompt
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:GH_USER}:${env:GH_TOKEN}@"
