@@ -12,7 +12,7 @@ pipeline {
   }
   stages {
     // ── シナリオA：featureブランチへのpush（PRでもmainでもないビルド） ──
-    stage('A: コンパイル') {
+    stage('A: Compile') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -25,7 +25,7 @@ pipeline {
           '''
       }
     }
-    stage('A: 差分スコープ静的解析') {
+    stage('A: Diff-Scoped Static Analysis') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -41,14 +41,14 @@ pipeline {
         '''
       }
     }
-    // stage('A: GitHub Checksへの結果反映') {
+    // stage('A: Report to GitHub Check') {
     //   when { allOf { expression { env.CHANGE_ID == null }; not { branch 'main' } } }
     //   steps {
     //     // report.xml の内容を GitHub Checks / コミットステータスとして表示（自前スクリプトや専用プラグインで実装）
     //     powershell 'python scripts/report-to-github-check.py build/jtest/report.xml'
     //   }
     // }
-    stage('A: AI修正提案（手動トリガー時のみ）') {
+    stage('A: AI Suggest Fix (manual trigger only)') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -72,7 +72,7 @@ pipeline {
     }
 
     // ── シナリオB：PRビルド（env.CHANGE_ID が非null） ──
-    stage('B: ビルド') {
+    stage('B: Build') {
       when {
         expression { env.CHANGE_ID != null }
       }
@@ -80,7 +80,7 @@ pipeline {
         powershell '.\\mvnw -B compile'
       }
     }
-    stage('B: テスト') {
+    stage('B: Test') {
       when {
         expression { env.CHANGE_ID != null }
       }
@@ -88,7 +88,7 @@ pipeline {
         powershell '.\\mvnw -B test'
       }
     }
-    stage('B: Jtest静的解析') {
+    stage('B: Jtest Static Analysis') {
       when {
         expression { env.CHANGE_ID != null }
       }
@@ -96,7 +96,7 @@ pipeline {
         powershell '.\\mvnw jtest:jtest "-Djtest.report=build/jtest"'
       }
     }
-    stage('B: AI自動修正') {
+    stage('B: AI Remediation') {
       when {
         allOf {
           expression { env.CHANGE_ID != null }
@@ -120,7 +120,7 @@ pipeline {
         }
       }
     }
-    stage('B: 通知') {
+    stage('B: Notify') {
       when {
         allOf {
           expression { env.CHANGE_ID != null }
@@ -135,7 +135,7 @@ pipeline {
     }
 
     // ── シナリオC：mainブランチ（マージ後）のビルド ──
-    stage('C: ビルド＆カバレッジ収集') {
+    stage('C: Build & Collect Coverage') {
       when {
         branch 'main'
       }
@@ -143,7 +143,7 @@ pipeline {
         powershell '.\\mvnw -B clean test-compile jtest:agent test jtest:jtest "-Djtest.report=build/jtest"'
       }
     }
-    stage('C: カバレッジ閾値判定') {
+    stage('C: Check Coverage Gate') {
       when {
         branch 'main'
       }
@@ -153,7 +153,7 @@ pipeline {
         }
       }
     }
-    stage('C: 単体テスト生成') {
+    stage('C: Generate Unit Tests') {
       when {
         allOf {
           branch 'main'
