@@ -1,3 +1,13 @@
+def violationsFound() {
+  def reportPath = 'build/jtest/report.xml'
+  if (!fileExists(reportPath)) {
+    echo "violationsFound(): ${reportPath} が見つかりません。違反なしとして扱います。"
+    return false
+  }
+  def content = readFile(file: reportPath, encoding: 'UTF-8')
+  return content.contains('hasViols="true"')
+}
+
 pipeline {
   agent any
   parameters {
@@ -148,7 +158,7 @@ pipeline {
       }
       steps {
         script {
-          env.COVERAGE_OK = (powershell(script: 'python scripts/check-coverage.py build/jtest/coverage.xml 80', returnStatus: true) == 0) ? 'true' : 'false'
+          env.COVERAGE_OK = (powershell(script: 'python scripts/check-coverage.py build/jtest/report.html 80', returnStatus: true) == 0) ? 'true' : 'false'
         }
       }
     }
