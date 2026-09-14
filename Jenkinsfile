@@ -7,7 +7,6 @@ pipeline {
     JTEST_HOME                 = 'C:/Parasoft/jtest'
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
-    JAVA_TOOL_OPTIONS          = ''
     MAVEN_OPTS                 = '-Dfile.encoding=MS932'
   }
   stages {
