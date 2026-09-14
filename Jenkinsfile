@@ -136,7 +136,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
-            git checkout -b "ai-fix/$env:CHANGE_ID"
+            git checkout -B "ai-fix/$env:CHANGE_ID"
             $env:JTEST_STATIC_BASE_REPORT = "$env:WORKSPACE\\build\\jtest\\report.xml"
             $prompt = "Use jtest-static-analysis to fix at most 5 violations. Do not run build or Jtest analysis (already provided). Commit each fix separately."
             $copilotArgs = @(
@@ -203,7 +203,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
-            git checkout -b "uta/coverage-boost-$env:BUILD_NUMBER"
+            git checkout -B "uta/coverage-boost-$env:BUILD_NUMBER"
             $prompt = "Use jtest-unit-testing to increase test coverage for the project. Commit each generated test separately."
             $copilotArgs = @(
               "--add-dir", $env:ANALYZED_PROJECT_PATH,
