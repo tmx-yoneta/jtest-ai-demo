@@ -1,0 +1,47 @@
+pipeline {
+  agent any
+  triggers {
+    cron('H 2 * * *')
+  }
+  environment {
+    JTEST_HOME                 = 'C:/Parasoft/jtest'
+    ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
+    JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
+    JTEST_COMMIT_FIXES         = 'true'
+    MAVEN_OPTS                 = '-Dfile.encoding=MS932'
+  }
+  stages {
+    stage('Full Analysis') {
+      steps {
+        bat '''
+          mvnw.cmd -B clean test-compile jtest:jtest "-Djtest.report=build/jtest"
+        '''
+      }
+    }
+    stage('AI Remediation (branch only, no PR)') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
+          powershell '''
+            git checkout -b "nightly-fix/$env:BUILD_NUMBER"
+            $prompt = "Use jtest-static-analysis to fix as many violations as possible, including low-severity ones. Fix at most 10 violations in this run."
+            $copilotArgs = @(
+              "--add-dir", $env:ANALYZED_PROJECT_PATH,
+              "--add-dir", $env:JTEST_HOME,
+              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
+              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "-p", $prompt
+            )
+            & copilot.exe @copilotArgs
+            $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
+            git push $authRemote "nightly-fix/$env:BUILD_NUMBER"
+          '''
+        }
+      }
+    }
+  }
+  post {
+    always {
+      echo "Nightly Jtest scan complete: ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+    }
+  }
+}

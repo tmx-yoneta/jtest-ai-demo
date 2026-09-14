@@ -85,7 +85,8 @@ pipeline {
               "--add-dir", $env:ANALYZED_PROJECT_PATH,
               "--add-dir", $env:JTEST_HOME,
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "--add-dir", "$env:USERPROFILE\.copilot\skills",
+              "--allow-all-tools",
               "-p", $prompt
             )
             & copilot.exe @copilotArgs
@@ -142,7 +143,8 @@ pipeline {
               "--add-dir", $env:ANALYZED_PROJECT_PATH,
               "--add-dir", $env:JTEST_HOME,
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "--add-dir", "$env:USERPROFILE\.copilot\skills",
+              "--allow-all-tools",
               "-p", $prompt
             )
             & copilot.exe @copilotArgs
@@ -207,7 +209,8 @@ pipeline {
               "--add-dir", $env:ANALYZED_PROJECT_PATH,
               "--add-dir", $env:JTEST_HOME,
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "--add-dir", "$env:USERPROFILE\.copilot\skills",
+              "--allow-all-tools",
               "-p", $prompt
             )
             & copilot.exe @copilotArgs
