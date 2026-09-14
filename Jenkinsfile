@@ -81,7 +81,14 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
             $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
-            $prompt | .\\scripts\\start_agent.bat copilot -p
+            $copilotArgs = @(
+              "--add-dir", $env:ANALYZED_PROJECT_PATH,
+              "--add-dir", $env:JTEST_HOME,
+              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
+              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "-p", $prompt
+            )
+            & copilot.exe @copilotArgs
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "HEAD:$env:BRANCH_NAME"
           '''
@@ -131,7 +138,14 @@ pipeline {
             git checkout -b "ai-fix/$env:CHANGE_ID"
             $env:JTEST_STATIC_BASE_REPORT = "$env:WORKSPACE\\build\\jtest\\report.xml"
             $prompt = "Use jtest-static-analysis to fix at most 5 violations. Do not run build or Jtest analysis (already provided)."
-            $prompt | .\\scripts\\start_agent.bat copilot -p
+            $copilotArgs = @(
+              "--add-dir", $env:ANALYZED_PROJECT_PATH,
+              "--add-dir", $env:JTEST_HOME,
+              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
+              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "-p", $prompt
+            )
+            & copilot.exe @copilotArgs
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "ai-fix/$env:CHANGE_ID"
           '''
@@ -189,7 +203,14 @@ pipeline {
           powershell '''
             git checkout -b "uta/coverage-boost-$env:BUILD_NUMBER"
             $prompt = "Use jtest-unit-testing to increase test coverage for the project."
-            $prompt | .\\scripts\\start_agent.bat copilot -p
+            $copilotArgs = @(
+              "--add-dir", $env:ANALYZED_PROJECT_PATH,
+              "--add-dir", $env:JTEST_HOME,
+              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
+              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
+              "-p", $prompt
+            )
+            & copilot.exe @copilotArgs
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "uta/coverage-boost-$env:BUILD_NUMBER"
             $env:GH_TOKEN = $env:PAT_TOKEN
