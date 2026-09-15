@@ -87,6 +87,7 @@ pipeline {
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
               "--add-dir", "$env:USERPROFILE/.copilot/skills",
               "--allow-all-tools",
+              "--silent",
               "-p", $prompt
             )
             $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -159,6 +160,7 @@ pipeline {
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
               "--add-dir", "$env:USERPROFILE/.copilot/skills",
               "--allow-all-tools",
+              "--silent",
               "-p", $prompt
             )
             $psi = New-Object System.Diagnostics.ProcessStartInfo
@@ -239,6 +241,7 @@ pipeline {
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
               "--add-dir", "$env:USERPROFILE/.copilot/skills",
               "--allow-all-tools",
+              "--silent",
               "-p", $prompt
             )
             $psi = New-Object System.Diagnostics.ProcessStartInfo
