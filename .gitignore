@@ -3,3 +3,5 @@ build/
 target/
 .gradle/
 resolved.config
+bank-account-*.log
+getParameterResult
