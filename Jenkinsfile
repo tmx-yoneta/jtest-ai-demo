@@ -100,10 +100,9 @@ pipeline {
             $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
             $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
             $copilotProc = [System.Diagnostics.Process]::Start($psi)
-            $copilotOutTask = $copilotProc.StandardOutput.ReadToEndAsync()
             $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
             $copilotProc.WaitForExit()
-            Write-Output $copilotOutTask.Result
             if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "HEAD:$env:BRANCH_NAME"
@@ -173,10 +172,9 @@ pipeline {
             $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
             $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
             $copilotProc = [System.Diagnostics.Process]::Start($psi)
-            $copilotOutTask = $copilotProc.StandardOutput.ReadToEndAsync()
             $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
             $copilotProc.WaitForExit()
-            Write-Output $copilotOutTask.Result
             if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "ai-fix/$env:CHANGE_ID"
@@ -254,10 +252,9 @@ pipeline {
             $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
             $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
             $copilotProc = [System.Diagnostics.Process]::Start($psi)
-            $copilotOutTask = $copilotProc.StandardOutput.ReadToEndAsync()
             $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
             $copilotProc.WaitForExit()
-            Write-Output $copilotOutTask.Result
             if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "uta/coverage-boost-$env:BUILD_NUMBER"
