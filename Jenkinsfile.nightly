@@ -8,32 +8,22 @@ pipeline {
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
     JTEST_COMMIT_FIXES         = 'true'
-    MAVEN_OPTS                 = '-Dfile.encoding=MS932'
+    MAVEN_OPTS                 = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8'
   }
   stages {
-    stage('Full Analysis') {
+    stage('全体スキャン') {
       steps {
-        bat '''
-          mvnw.cmd -B clean test-compile jtest:jtest "-Djtest.report=build/jtest"
-        '''
+        powershell '.\\mvnw.cmd -B clean test-compile jtest:jtest "-Djtest.report=build/jtest"'
       }
     }
-    stage('AI Remediation (branch only, no PR)') {
+    stage('AI自動修正（ブランチ作成のみ、PRは作らない）') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
-            git checkout -b "nightly-fix/$env:BUILD_NUMBER"
-            $prompt = "Use jtest-static-analysis to fix as many violations as possible, including low-severity ones. Fix at most 10 violations in this run."
-            $copilotArgs = @(
-              "--add-dir", $env:ANALYZED_PROJECT_PATH,
-              "--add-dir", $env:JTEST_HOME,
-              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--allow-tool", "shell,view,create,edit,write,read,grep,glob,memory",
-              "-p", $prompt
-            )
-            & copilot.exe @copilotArgs
-            $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
-            git push $authRemote "nightly-fix/$env:BUILD_NUMBER"
+            git checkout -B "nightly-fix/$env:BUILD_NUMBER"
+            $prompt = "Use jtest-static-analysis to fix as many violations as possible, including low-severity ones. Fix at most 10 violations in this run. Commit each fix separately."
+            & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
+            & .\\scripts\\git-push-with-pat.ps1 -Branch "nightly-fix/$env:BUILD_NUMBER"
           '''
         }
       }
@@ -41,7 +31,7 @@ pipeline {
   }
   post {
     always {
-      echo "Nightly Jtest scan complete: ${env.BUILD_NUMBER} (${env.BUILD_URL})"
+      echo "夜間バッチによるJtestスキャンが完了しました: ${env.BUILD_NUMBER} (${env.BUILD_URL})"
     }
   }
 }

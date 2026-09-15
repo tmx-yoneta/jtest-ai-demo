@@ -24,7 +24,7 @@ pipeline {
   }
   stages {
     // ── シナリオA：featureブランチへのpush（PRでもmainでもないビルド） ──
-    stage('A: Compile') {
+    stage('A: コンパイル') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -32,12 +32,10 @@ pipeline {
         }
       }
       steps {
-        powershell '''
-          .\\mvnw -B -q compile
-          '''
+        powershell '.\\mvnw -B -q compile'
       }
     }
-    stage('A: Diff-Scoped Static Analysis') {
+    stage('A: 差分スコープ静的解析') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -48,12 +46,10 @@ pipeline {
         JTEST_REFERENCE_BRANCH = 'main'
       }
       steps {
-        bat '''
-          mvnw.cmd jtest:jtest "-Djtest.report=build/jtest"
-        '''
+        powershell '.\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest"'
       }
     }
-    stage('A: Report to GitHub Check') {
+    stage('A: GitHub Checksへ結果報告') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -66,7 +62,7 @@ pipeline {
         }
       }
     }
-    stage('A: AI Suggest Fix (manual trigger only)') {
+    stage('A: AI修正提案（手動トリガー時のみ）') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -81,39 +77,15 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
             $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
-            $copilotArgs = @(
-              "--add-dir", $env:ANALYZED_PROJECT_PATH,
-              "--add-dir", $env:JTEST_HOME,
-              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--add-dir", "$env:USERPROFILE/.copilot/skills",
-              "--allow-all-tools",
-              "--silent",
-              "-p", $prompt
-            )
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = "copilot.exe"
-            $psi.Arguments = (($copilotArgs | ForEach-Object {
-              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
-            }) -join ' ')
-            $psi.RedirectStandardOutput = $true
-            $psi.RedirectStandardError = $true
-            $psi.UseShellExecute = $false
-            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
-            $copilotProc = [System.Diagnostics.Process]::Start($psi)
-            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
-            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
-            $copilotProc.WaitForExit()
-            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
-            $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
-            git push $authRemote "HEAD:$env:BRANCH_NAME"
+            & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
+            & .\\scripts\\git-push-with-pat.ps1 -Branch $env:BRANCH_NAME
           '''
         }
       }
     }
 
     // ── シナリオB：PRビルド（env.CHANGE_ID が非null） ──
-    stage('B: Build') {
+    stage('B: ビルド') {
       when {
         expression { env.CHANGE_ID != null }
       }
@@ -121,7 +93,7 @@ pipeline {
         powershell '.\\mvnw -B compile'
       }
     }
-    stage('B: Test') {
+    stage('B: テスト実行') {
       when {
         expression { env.CHANGE_ID != null }
       }
@@ -129,7 +101,7 @@ pipeline {
         powershell '.\\mvnw -B test'
       }
     }
-    stage('B: Jtest Static Analysis') {
+    stage('B: Jtest静的解析') {
       when {
         expression { env.CHANGE_ID != null }
       }
@@ -137,7 +109,7 @@ pipeline {
         powershell '.\\mvnw jtest:jtest "-Djtest.report=build/jtest"'
       }
     }
-    stage('B: AI Remediation') {
+    stage('B: AI自動修正') {
       when {
         allOf {
           expression { env.CHANGE_ID != null }
@@ -154,37 +126,13 @@ pipeline {
             git checkout -B "ai-fix/$env:CHANGE_ID"
             $env:JTEST_STATIC_BASE_REPORT = "$env:WORKSPACE\\build\\jtest\\report.xml"
             $prompt = "Use jtest-static-analysis to fix at most 5 violations. Do not run build or Jtest analysis (already provided). Commit each fix separately."
-            $copilotArgs = @(
-              "--add-dir", $env:ANALYZED_PROJECT_PATH,
-              "--add-dir", $env:JTEST_HOME,
-              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--add-dir", "$env:USERPROFILE/.copilot/skills",
-              "--allow-all-tools",
-              "--silent",
-              "-p", $prompt
-            )
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = "copilot.exe"
-            $psi.Arguments = (($copilotArgs | ForEach-Object {
-              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
-            }) -join ' ')
-            $psi.RedirectStandardOutput = $true
-            $psi.RedirectStandardError = $true
-            $psi.UseShellExecute = $false
-            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
-            $copilotProc = [System.Diagnostics.Process]::Start($psi)
-            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
-            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
-            $copilotProc.WaitForExit()
-            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
-            $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
-            git push $authRemote "ai-fix/$env:CHANGE_ID"
+            & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
+            & .\\scripts\\git-push-with-pat.ps1 -Branch "ai-fix/$env:CHANGE_ID"
           '''
         }
       }
     }
-    stage('B: Notify') {
+    stage('B: PR通知') {
       when {
         allOf {
           expression { env.CHANGE_ID != null }
@@ -199,7 +147,7 @@ pipeline {
     }
 
     // ── シナリオC：mainブランチ（マージ後）のビルド ──
-    stage('C: Build & Collect Coverage') {
+    stage('C: ビルド＆カバレッジ収集') {
       when {
         branch 'main'
       }
@@ -207,7 +155,7 @@ pipeline {
         powershell '.\\mvnw -B clean test-compile jtest:agent test jtest:jtest "-Djtest.config=builtin://Unit Tests" "-Djtest.report=build/jtest"'
       }
     }
-    stage('C: Check Coverage Gate') {
+    stage('C: カバレッジ判定') {
       when {
         branch 'main'
       }
@@ -217,7 +165,7 @@ pipeline {
         }
       }
     }
-    stage('C: Generate Unit Tests') {
+    stage('C: ユニットテスト自動生成') {
       when {
         allOf {
           branch 'main'
@@ -235,32 +183,8 @@ pipeline {
           powershell '''
             git checkout -B "uta/coverage-boost-$env:BUILD_NUMBER"
             $prompt = "Use jtest-unit-testing to increase test coverage for the project. Commit each generated test separately."
-            $copilotArgs = @(
-              "--add-dir", $env:ANALYZED_PROJECT_PATH,
-              "--add-dir", $env:JTEST_HOME,
-              "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
-              "--add-dir", "$env:USERPROFILE/.copilot/skills",
-              "--allow-all-tools",
-              "--silent",
-              "-p", $prompt
-            )
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = "copilot.exe"
-            $psi.Arguments = (($copilotArgs | ForEach-Object {
-              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
-            }) -join ' ')
-            $psi.RedirectStandardOutput = $true
-            $psi.RedirectStandardError = $true
-            $psi.UseShellExecute = $false
-            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
-            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
-            $copilotProc = [System.Diagnostics.Process]::Start($psi)
-            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
-            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
-            $copilotProc.WaitForExit()
-            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
-            $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
-            git push $authRemote "uta/coverage-boost-$env:BUILD_NUMBER"
+            & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
+            & .\\scripts\\git-push-with-pat.ps1 -Branch "uta/coverage-boost-$env:BUILD_NUMBER"
             $env:GH_TOKEN = $env:PAT_TOKEN
             & $env:GH_EXE pr create --title "Increase test coverage (auto-generated)" --body "Generated by jtest-unit-testing skill" --base main --head "uta/coverage-boost-$env:BUILD_NUMBER"
           '''
@@ -269,4 +193,3 @@ pipeline {
     }
   }
 }
-
