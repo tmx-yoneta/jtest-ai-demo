@@ -17,7 +17,7 @@ pipeline {
     JTEST_HOME                 = 'C:/Parasoft/jtest'
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
-    MAVEN_OPTS                 = '-Dfile.encoding=MS932'
+    MAVEN_OPTS                 = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8'
     // Jenkinsサービス起動時のPATHにgh CLI／pythonが含まれていない可能性があるため、フルパスで参照する
     GH_EXE                     = 'C:\\Program Files\\GitHub CLI\\gh.exe'
     PYTHON_EXE                 = 'C:\\Users\\yoneta\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
@@ -87,9 +87,24 @@ pipeline {
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
               "--add-dir", "$env:USERPROFILE/.copilot/skills",
               "--allow-all-tools",
+              "--silent",
               "-p", $prompt
             )
-            & copilot.exe @copilotArgs
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "copilot.exe"
+            $psi.Arguments = (($copilotArgs | ForEach-Object {
+              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
+            }) -join ' ')
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+            $copilotProc = [System.Diagnostics.Process]::Start($psi)
+            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
+            $copilotProc.WaitForExit()
+            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "HEAD:$env:BRANCH_NAME"
           '''
@@ -145,9 +160,24 @@ pipeline {
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
               "--add-dir", "$env:USERPROFILE/.copilot/skills",
               "--allow-all-tools",
+              "--silent",
               "-p", $prompt
             )
-            & copilot.exe @copilotArgs
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "copilot.exe"
+            $psi.Arguments = (($copilotArgs | ForEach-Object {
+              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
+            }) -join ' ')
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+            $copilotProc = [System.Diagnostics.Process]::Start($psi)
+            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
+            $copilotProc.WaitForExit()
+            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "ai-fix/$env:CHANGE_ID"
           '''
@@ -211,9 +241,24 @@ pipeline {
               "--add-dir", "$env:JTEST_HOME/integration/ai/skills",
               "--add-dir", "$env:USERPROFILE/.copilot/skills",
               "--allow-all-tools",
+              "--silent",
               "-p", $prompt
             )
-            & copilot.exe @copilotArgs
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "copilot.exe"
+            $psi.Arguments = (($copilotArgs | ForEach-Object {
+              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
+            }) -join ' ')
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+            $copilotProc = [System.Diagnostics.Process]::Start($psi)
+            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            while (($copilotLine = $copilotProc.StandardOutput.ReadLine()) -ne $null) { Write-Output $copilotLine }
+            $copilotProc.WaitForExit()
+            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "uta/coverage-boost-$env:BUILD_NUMBER"
             $env:GH_TOKEN = $env:PAT_TOKEN
