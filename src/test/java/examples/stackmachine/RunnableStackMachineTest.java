@@ -1,7 +1,6 @@
 package examples.stackmachine;
 
 import java.awt.event.ComponentEvent;
-import java.awt.event.WindowEvent;
 
 import org.junit.Test;
 
@@ -42,37 +41,13 @@ public class RunnableStackMachineTest
 
     }
 
-    /**
-     * Parasoft Jtest UTA: Test for main(String[])
-     *
-     * @see examples.stackmachine.RunnableStackMachine#main(String[])
-     * @author yoneta
-     */
-    @Test(timeout = 5000)
-    public void testMain() throws Throwable
-    {
-        // When
-        String[] args = new String[1]; // UTA: デフォルト値
-        args[0] = "args[0]"; // UTA: デフォルト値
-        RunnableStackMachine.main(args);
+    // NOTE(レビューで削除): AI生成時点の testMain は RunnableStackMachine.main(String[]) を
+    // そのまま呼び出しており、frame.setVisible(true) でGUIウィンドウの表示を試みる。
+    // ヘッドレスなCI環境ではHeadlessExceptionまたはイベントループのハングを招くため削除した。
 
-    }
-
-    /**
-     * Parasoft Jtest UTA: Test for windowClosing(WindowEvent)
-     *
-     * @see examples.stackmachine.RunnableStackMachine#windowClosing(WindowEvent)
-     * @author yoneta
-     */
-    @Test(timeout = 5000)
-    public void testWindowClosing() throws Throwable
-    {
-        // Given
-        RunnableStackMachine underTest = new RunnableStackMachine();
-
-        // When
-        WindowEvent e = mock(WindowEvent.class);
-        underTest.windowClosing(e);
-
-    }
+    // NOTE(レビューで削除): AI生成時点の testWindowClosing は windowClosing(WindowEvent) を
+    // 直接呼び出していたが、その実装は System.exit(0) であり、テスト実行用JVMごと
+    // プロセスを終了させてしまう（Surefireのフォークプロセスがクラッシュし、
+    // mvn test 全体がBUILD FAILUREになることを実機で確認した）。
+    // AIは副作用（プロセス終了）を理解せずにテストを生成していたため削除した。
 }
