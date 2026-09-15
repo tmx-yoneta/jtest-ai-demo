@@ -1,0 +1,20 @@
+pipeline {
+  agent any
+  triggers {
+    cron('H 3 * * 0')
+  }
+  environment {
+    JTEST_HOME = 'C:/Parasoft/jtest'
+    MAVEN_OPTS = '-Dfile.encoding=MS932'
+  }
+  stages {
+    stage('Generate TIA Baseline') {
+      steps {
+        bat '''
+          mvnw.cmd clean test-compile jtest:agent test jtest:jtest "-Djtest.config=builtin://Unit Tests" "-Djtest.report=tia"
+        '''
+        archiveArtifacts artifacts: 'tia/report.xml,tia/coverage.xml', fingerprint: true
+      }
+    }
+  }
+}

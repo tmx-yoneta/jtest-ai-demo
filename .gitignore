@@ -1,0 +1,5 @@
+.jtest/
+build/
+target/
+.gradle/
+resolved.config
