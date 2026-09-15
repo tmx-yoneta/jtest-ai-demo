@@ -89,7 +89,20 @@ pipeline {
               "--allow-all-tools",
               "-p", $prompt
             )
-            & copilot.exe @copilotArgs
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "copilot.exe"
+            foreach ($a in $copilotArgs) { $psi.ArgumentList.Add($a) }
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+            $copilotProc = [System.Diagnostics.Process]::Start($psi)
+            $copilotOutTask = $copilotProc.StandardOutput.ReadToEndAsync()
+            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            $copilotProc.WaitForExit()
+            Write-Output $copilotOutTask.Result
+            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "HEAD:$env:BRANCH_NAME"
           '''
@@ -147,7 +160,20 @@ pipeline {
               "--allow-all-tools",
               "-p", $prompt
             )
-            & copilot.exe @copilotArgs
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "copilot.exe"
+            foreach ($a in $copilotArgs) { $psi.ArgumentList.Add($a) }
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+            $copilotProc = [System.Diagnostics.Process]::Start($psi)
+            $copilotOutTask = $copilotProc.StandardOutput.ReadToEndAsync()
+            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            $copilotProc.WaitForExit()
+            Write-Output $copilotOutTask.Result
+            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "ai-fix/$env:CHANGE_ID"
           '''
@@ -213,7 +239,20 @@ pipeline {
               "--allow-all-tools",
               "-p", $prompt
             )
-            & copilot.exe @copilotArgs
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "copilot.exe"
+            foreach ($a in $copilotArgs) { $psi.ArgumentList.Add($a) }
+            $psi.RedirectStandardOutput = $true
+            $psi.RedirectStandardError = $true
+            $psi.UseShellExecute = $false
+            $psi.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+            $psi.StandardErrorEncoding = [System.Text.Encoding]::UTF8
+            $copilotProc = [System.Diagnostics.Process]::Start($psi)
+            $copilotOutTask = $copilotProc.StandardOutput.ReadToEndAsync()
+            $copilotErrTask = $copilotProc.StandardError.ReadToEndAsync()
+            $copilotProc.WaitForExit()
+            Write-Output $copilotOutTask.Result
+            if ($copilotErrTask.Result) { Write-Output $copilotErrTask.Result }
             $authRemote = (git remote get-url origin) -replace '^https://', "https://${env:PAT_USER}:${env:PAT_TOKEN}@"
             git push $authRemote "uta/coverage-boost-$env:BUILD_NUMBER"
             $env:GH_TOKEN = $env:PAT_TOKEN
