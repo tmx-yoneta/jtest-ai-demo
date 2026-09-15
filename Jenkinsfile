@@ -91,7 +91,9 @@ pipeline {
             )
             $psi = New-Object System.Diagnostics.ProcessStartInfo
             $psi.FileName = "copilot.exe"
-            foreach ($a in $copilotArgs) { $psi.ArgumentList.Add($a) }
+            $psi.Arguments = (($copilotArgs | ForEach-Object {
+              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
+            }) -join ' ')
             $psi.RedirectStandardOutput = $true
             $psi.RedirectStandardError = $true
             $psi.UseShellExecute = $false
@@ -162,7 +164,9 @@ pipeline {
             )
             $psi = New-Object System.Diagnostics.ProcessStartInfo
             $psi.FileName = "copilot.exe"
-            foreach ($a in $copilotArgs) { $psi.ArgumentList.Add($a) }
+            $psi.Arguments = (($copilotArgs | ForEach-Object {
+              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
+            }) -join ' ')
             $psi.RedirectStandardOutput = $true
             $psi.RedirectStandardError = $true
             $psi.UseShellExecute = $false
@@ -241,7 +245,9 @@ pipeline {
             )
             $psi = New-Object System.Diagnostics.ProcessStartInfo
             $psi.FileName = "copilot.exe"
-            foreach ($a in $copilotArgs) { $psi.ArgumentList.Add($a) }
+            $psi.Arguments = (($copilotArgs | ForEach-Object {
+              if ($_ -match '[\\s"]') { '"' + ($_ -replace '"', '""') + '"' } else { $_ }
+            }) -join ' ')
             $psi.RedirectStandardOutput = $true
             $psi.RedirectStandardError = $true
             $psi.UseShellExecute = $false
