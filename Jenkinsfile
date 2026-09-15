@@ -17,7 +17,7 @@ pipeline {
     JTEST_HOME                 = 'C:/Parasoft/jtest'
     ANALYZED_PROJECT_PATH      = "${WORKSPACE}"
     JTEST_STATIC_CONFIGURATION = 'builtin://Recommended Rules'
-    MAVEN_OPTS                 = '-Dfile.encoding=UTF-8'
+    MAVEN_OPTS                 = '-Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8'
     // Jenkinsサービス起動時のPATHにgh CLI／pythonが含まれていない可能性があるため、フルパスで参照する
     GH_EXE                     = 'C:\\Program Files\\GitHub CLI\\gh.exe'
     PYTHON_EXE                 = 'C:\\Users\\yoneta\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'

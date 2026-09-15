@@ -22,6 +22,14 @@ import sys
 import urllib.error
 import urllib.request
 
+# Windows上でstdoutがリダイレクトされている場合、Pythonは既定でシステムの
+# ANSIコードページ（日本語環境ではCP932）を使う。JenkinsはUTF-8を前提と
+# しているため、明示的にUTF-8へ切り替えて文字化けを防ぐ。
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 
 def run_git(*args):
     return subprocess.check_output(["git", *args], text=True).strip()
