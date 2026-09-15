@@ -174,7 +174,7 @@ pipeline {
         branch 'main'
       }
       steps {
-        powershell '.\\mvnw -B clean test-compile jtest:agent test jtest:jtest "-Djtest.report=build/jtest"'
+        powershell '.\\mvnw -B clean test-compile jtest:agent test jtest:jtest "-Djtest.config=builtin://Unit Tests" "-Djtest.report=build/jtest"'
       }
     }
     stage('C: Check Coverage Gate') {
