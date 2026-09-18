@@ -14,6 +14,7 @@ pipeline {
     stage('全体スキャン') {
       steps {
         powershell '.\\mvnw.cmd -B clean test-compile jtest:jtest "-Djtest.report=build/jtest"'
+        recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
       }
     }
     stage('AI自動修正（ブランチ作成のみ、PRは作らない）') {

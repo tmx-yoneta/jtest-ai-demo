@@ -47,9 +47,10 @@ pipeline {
       }
       steps {
         powershell '.\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest"'
+        recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
       }
     }
-    stage('A: GitHub Checksへ結果報告') {
+    stage('A: GitHub Checksへ結果報告（補助）') {
       when {
         allOf {
           expression { env.CHANGE_ID == null }
@@ -107,6 +108,7 @@ pipeline {
       }
       steps {
         powershell '.\\mvnw jtest:jtest "-Djtest.report=build/jtest"'
+        recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
       }
     }
     stage('B: AI自動修正') {
@@ -153,6 +155,8 @@ pipeline {
       }
       steps {
         powershell '.\\mvnw -B clean test-compile jtest:agent test jtest:jtest "-Djtest.config=builtin://Unit Tests" "-Djtest.report=build/jtest"'
+        recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
+        recordParasoftCoverage pattern: 'build/jtest/coverage.xml'
       }
     }
     stage('C: カバレッジ判定') {
