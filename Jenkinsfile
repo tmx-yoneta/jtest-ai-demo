@@ -27,7 +27,7 @@ pipeline {
     stage('A: コンパイル') {
       when {
         allOf {
-          expression { env.CHANGE_ID == null }
+          expression { env.CHANGE_ID == null } // PRではないビルド
           not { branch 'main' }
         }
       }
@@ -87,7 +87,7 @@ pipeline {
     // ── シナリオB：PRビルド（env.CHANGE_ID が非null） ──
     stage('B: ビルド') {
       when {
-        expression { env.CHANGE_ID != null }
+        expression { env.CHANGE_ID != null }  // PRビルド（env.CHANGE_ID が非null）の場合のみ実行
       }
       steps {
         powershell '.\\mvnw -B compile'
