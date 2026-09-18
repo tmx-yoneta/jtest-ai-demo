@@ -21,7 +21,8 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
             git checkout -B "nightly-fix/$env:BUILD_NUMBER"
-            $prompt = "Use jtest-static-analysis to fix as many violations as possible, including low-severity ones. Fix at most 10 violations in this run. Commit each fix separately."
+            $env:JTEST_STATIC_BASE_REPORT = "$env:WORKSPACE\\build\\jtest\\report.xml"
+            $prompt = "Use jtest-static-analysis to fix as many violations as possible, including low-severity ones. Do not run build or Jtest analysis (already provided). Fix at most 10 violations in this run. Commit each fix separately."
             & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
             & .\\scripts\\git-push-with-pat.ps1 -Branch "nightly-fix/$env:BUILD_NUMBER"
           '''
