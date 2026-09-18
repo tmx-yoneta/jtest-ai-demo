@@ -46,7 +46,10 @@ pipeline {
         JTEST_REFERENCE_BRANCH = 'main'
       }
       steps {
-        powershell '.\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest"'
+        // JTEST_REFERENCE_BRANCHはjtest-static-analysisスキル内部専用の変数で、生のjtest:jtest呼び出しには
+        // 効果がない。実際に差分スコープ（mainとの差分ファイルのみ）を効かせるには、Jtest本来の
+        // scope.scontrol.*プロパティを明示的に渡す必要がある(不具合#19)。
+        powershell '.\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest" "-Dproperty.scope.scontrol.files.filter.mode=branch" "-Dproperty.scope.scontrol.ref.branch=main" "-Dproperty.scontrol.rep1.type=git" "-Dproperty.scontrol.rep1.git.workspace=$env:WORKSPACE" "-Dproperty.scontrol.rep1.git.branch=$env:BRANCH_NAME"'
         recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
       }
     }
@@ -72,7 +75,9 @@ pipeline {
         }
       }
       environment {
-        JTEST_COMMIT_FIXES = 'true'
+        JTEST_COMMIT_FIXES     = 'true'
+        // ステージのenvironmentブロックは兄弟ステージ間で共有されないため、ここでも明示的に設定する必要がある(不具合#19)
+        JTEST_REFERENCE_BRANCH = 'main'
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
