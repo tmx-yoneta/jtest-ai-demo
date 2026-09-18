@@ -12,6 +12,8 @@ pipeline {
       steps {
         powershell '.\\mvnw.cmd clean test-compile jtest:agent test jtest:jtest "-Djtest.config=builtin://Unit Tests" "-Djtest.report=tia"'
         archiveArtifacts artifacts: 'tia/report.xml,tia/coverage.xml', fingerprint: true
+        recordIssues tools: [parasoftFindings(pattern: 'tia/report.xml')], id: 'jtest-findings'
+        recordParasoftCoverage pattern: 'tia/coverage.xml'
       }
     }
   }
