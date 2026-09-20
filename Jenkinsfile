@@ -42,26 +42,38 @@ pipeline {
           not { branch 'main' }
         }
       }
-      environment {
-        JTEST_REFERENCE_BRANCH = 'main'
-      }
       steps {
-        // JTEST_REFERENCE_BRANCHはjtest-static-analysisスキル内部専用の変数で、生のjtest:jtest呼び出しには
-        // 効果がない。実際に差分スコープ（mainとの差分ファイルのみ）を効かせるには、Jtest本来の
-        // scope.scontrol.*プロパティを明示的に渡す必要がある(不具合#19)。
-        // さらに2点、実機で追加発覚した問題への対処(不具合#20)：
-        // (1) Jenkins Multibranch Pipelineの軽量チェックアウトはビルド対象のブランチしかfetchしないため、
-        //     比較対象のmainがこのワークスペースのgitリポジトリに一切存在しない。事前にfetchし、
-        //     ローカルにmainブランチとして解決できるようにする。
-        // (2) scope.scontrol.files.filter.mode=branch を指定するだけでは不十分で、上位の有効化フラグ
-        //     scope.scontrol=true も必須（jtest-analyze.ps1の実装を確認して判明。Jenkinsfile側で
-        //     このフラグの書き写しを漏らしていたのが不具合#19修正時の見落とし）。
-        powershell '''
-          git fetch origin main:refs/remotes/origin/main
-          git branch -f main origin/main
-          .\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest" "-Dproperty.scope.scontrol=true" "-Dproperty.scope.scontrol.files.filter.mode=branch" "-Dproperty.scope.scontrol.ref.branch=main" "-Dproperty.scontrol.rep1.type=git" "-Dproperty.scontrol.rep1.git.workspace=$env:WORKSPACE" "-Dproperty.scontrol.rep1.git.branch=$env:BRANCH_NAME"
-        '''
-        recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
+        // Jtest本来のgit差分スコープ機能(scope.scontrol.*)は、このJenkins環境では
+        // サービス実行コンテキスト特有の問題で機能しないことが実機検証で判明した(不具合#21)。
+        // 対話セッションから同一コマンドを実行すると正しく1件検出されるが、Jenkinsサービス
+        // 経由では常に0件（全ファイルが除外される）。原因はJVMのネイティブ/サブプロセスI/O
+        // まわりのエンコーディングがコンソールを持たないWindowsサービスセッションで異なる
+        // ことによるものと推測しているが、完全な根本原因の特定には至っていない
+        // （不具合#16・copilotの装飾文字問題と同じ系統の問題）。
+        // そのため、差分計算はPowerShell側のgitで行い、変更されたJavaファイルの一覧を
+        // 直接-Djtest.resourcesで渡す方式に切り替えた。こちらはJtestのgit連携機能に
+        // 依存しないため、この問題を回避できる。
+        script {
+          // 変更されたJavaファイルが1件もない場合、-Djtest.resourcesに何も一致しないパターンを
+          // 渡すとJtest自体がエラー終了する（「テスト スコープが空です」）ため、その場合は
+          // 解析自体をスキップする。
+          def analyzed = powershell(returnStatus: true, script: '''
+            git fetch origin main:refs/remotes/origin/main
+            $changedFiles = git diff --name-only origin/main...HEAD -- "*.java"
+            if (-not $changedFiles) {
+              Write-Output "mainとの差分にJavaファイルの変更がないため、Jtest解析をスキップします。"
+              exit 1
+            }
+            $changed = (($changedFiles | ForEach-Object { "**/$_" }) -join ",")
+            Write-Output "差分スコープ対象ファイル: $changed"
+            .\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest" "-Djtest.resources=$changed"
+          ''') == 0
+          if (analyzed) {
+            recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
+          } else {
+            echo 'Jtest解析をスキップしたため、recordIssuesも実行しません。'
+          }
+        }
       }
     }
     stage('A: GitHub Checksへ結果報告（補助）') {
@@ -86,15 +98,20 @@ pipeline {
         }
       }
       environment {
-        JTEST_COMMIT_FIXES     = 'true'
-        // ステージのenvironmentブロックは兄弟ステージ間で共有されないため、ここでも明示的に設定する必要がある(不具合#19)
-        JTEST_REFERENCE_BRANCH = 'main'
+        JTEST_COMMIT_FIXES = 'true'
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
+          // JTEST_REFERENCE_BRANCH（スキル内部のgit差分スコープ機能）は不具合#21のため使わず、
+          // 「A: 差分スコープ静的解析」と同じくPowerShell側で計算した変更ファイル一覧を
+          // JTEST_RESOURCE経由でスキルに渡す（スキルはこれをそのまま-Djtest.resourcesに変換する）。
           powershell '''
             git fetch origin main:refs/remotes/origin/main
-            git branch -f main origin/main
+            $changedFiles = git diff --name-only origin/main...HEAD -- "*.java"
+            $changed = (($changedFiles | ForEach-Object { "**/$_" }) -join ",")
+            if ($changed) {
+              $env:JTEST_RESOURCE = $changed
+            }
             $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
             & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
             & .\\scripts\\git-push-with-pat.ps1 -Branch $env:BRANCH_NAME
