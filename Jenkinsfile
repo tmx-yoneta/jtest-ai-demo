@@ -49,7 +49,18 @@ pipeline {
         // JTEST_REFERENCE_BRANCHはjtest-static-analysisスキル内部専用の変数で、生のjtest:jtest呼び出しには
         // 効果がない。実際に差分スコープ（mainとの差分ファイルのみ）を効かせるには、Jtest本来の
         // scope.scontrol.*プロパティを明示的に渡す必要がある(不具合#19)。
-        powershell '.\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest" "-Dproperty.scope.scontrol.files.filter.mode=branch" "-Dproperty.scope.scontrol.ref.branch=main" "-Dproperty.scontrol.rep1.type=git" "-Dproperty.scontrol.rep1.git.workspace=$env:WORKSPACE" "-Dproperty.scontrol.rep1.git.branch=$env:BRANCH_NAME"'
+        // さらに2点、実機で追加発覚した問題への対処(不具合#20)：
+        // (1) Jenkins Multibranch Pipelineの軽量チェックアウトはビルド対象のブランチしかfetchしないため、
+        //     比較対象のmainがこのワークスペースのgitリポジトリに一切存在しない。事前にfetchし、
+        //     ローカルにmainブランチとして解決できるようにする。
+        // (2) scope.scontrol.files.filter.mode=branch を指定するだけでは不十分で、上位の有効化フラグ
+        //     scope.scontrol=true も必須（jtest-analyze.ps1の実装を確認して判明。Jenkinsfile側で
+        //     このフラグの書き写しを漏らしていたのが不具合#19修正時の見落とし）。
+        powershell '''
+          git fetch origin main:refs/remotes/origin/main
+          git branch -f main origin/main
+          .\\mvnw.cmd jtest:jtest "-Djtest.report=build/jtest" "-Dproperty.scope.scontrol=true" "-Dproperty.scope.scontrol.files.filter.mode=branch" "-Dproperty.scope.scontrol.ref.branch=main" "-Dproperty.scontrol.rep1.type=git" "-Dproperty.scontrol.rep1.git.workspace=$env:WORKSPACE" "-Dproperty.scontrol.rep1.git.branch=$env:BRANCH_NAME"
+        '''
         recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
       }
     }
@@ -82,6 +93,8 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
+            git fetch origin main:refs/remotes/origin/main
+            git branch -f main origin/main
             $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
             & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
             & .\\scripts\\git-push-with-pat.ps1 -Branch $env:BRANCH_NAME
