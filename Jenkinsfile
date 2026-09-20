@@ -161,7 +161,11 @@ pipeline {
       steps {
         powershell '.\\mvnw -B clean test-compile jtest:agent test jtest:jtest "-Djtest.config=builtin://Unit Tests" "-Djtest.report=build/jtest"'
         recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
-        recordParasoftCoverage pattern: 'build/jtest/coverage.xml'
+        // 閾値判定はrecordParasoftCoverage自身のQuality Gate機能に任せる（自前のcheck-coverage.pyは不要になった）。
+        // 閾値未満のときはビルドをUNSTABLEにする（criticality: 'UNSTABLE'）。これは失敗ではなく、
+        // 次の「C: ユニットテスト自動生成」が起動する合図として意図的に使っている。
+        recordParasoftCoverage pattern: 'build/jtest/coverage.xml',
+          coverageQualityGates: [[threshold: 80.0, type: 'PROJECT', criticality: 'UNSTABLE']]
       }
     }
     stage('C: カバレッジ判定') {
@@ -170,7 +174,9 @@ pipeline {
       }
       steps {
         script {
-          env.COVERAGE_OK = (powershell(script: '& $env:PYTHON_EXE scripts/check-coverage.py build/jtest/report.html 80', returnStatus: true) == 0) ? 'true' : 'false'
+          // recordParasoftCoverageのQuality Gateが閾値未満と判定していればcurrentBuild.resultが
+          // UNSTABLEになる。それ以外（null＝未設定、またはSUCCESS）なら閾値を満たしている。
+          env.COVERAGE_OK = (currentBuild.result == null || currentBuild.result == 'SUCCESS') ? 'true' : 'false'
         }
       }
     }
