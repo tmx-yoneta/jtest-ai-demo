@@ -1,6 +1,7 @@
 package examples.stackmachine;
 
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowEvent;
 
 import org.junit.Test;
 
@@ -38,6 +39,26 @@ public class RunnableStackMachineTest
         assertNotNull(underTest._stackList);
         assertNotNull(underTest._pushTextField);
         assertNotNull(underTest._scrollPane);
+
+    }
+
+    /**
+     * Parasoft Jtest UTA: Test for componentResized(ComponentEvent)
+     *
+     * @see examples.stackmachine.RunnableStackMachine#componentResized(ComponentEvent)
+     * @author yoneta
+     */
+    @Test(timeout = 5000)
+    public void testComponentResized2() throws Throwable
+    {
+        // Given
+        RunnableStackMachine underTest = new RunnableStackMachine();
+        StackList _stackListValue = mock(StackList.class);
+        underTest._stackList = _stackListValue;
+
+        // When
+        ComponentEvent e = mock(ComponentEvent.class);
+        underTest.componentResized(e);
 
     }
 
