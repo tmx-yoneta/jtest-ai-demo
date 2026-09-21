@@ -15,8 +15,11 @@ public class AlwaysCloseGSS {
         } catch (Exception ioe) {
             System.out.println("Exception occured: " + ioe);
         } finally {
-            if (context != null) {
-                context.dispose();
+            try {
+                if (context != null) {
+                    context.dispose();
+                }
+            } catch (Exception e) {
             }
         }
     }
