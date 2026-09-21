@@ -51,4 +51,5 @@ public class AlwaysCloseLoggingTest
         underTest.logClose(level, message);
 
     }
+
 }
