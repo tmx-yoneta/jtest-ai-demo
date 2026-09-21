@@ -91,4 +91,5 @@ public class AlwaysCloseSocketsTest
         underTest.connectClientClose(srvSocket);
 
     }
+
 }
