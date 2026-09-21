@@ -96,4 +96,5 @@ public class SimpleObjectHandlerTest
         assertNotNull(underTest.getElement());
 
     }
+
 }
