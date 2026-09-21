@@ -367,4 +367,5 @@ public class CustomMoneyTest
         assertEquals("fCurrencyValue", underTest.fCurrency);
 
     }
+
 }
