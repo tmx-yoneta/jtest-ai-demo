@@ -6,12 +6,18 @@ import org.ietf.jgss.GSSManager;
 public class AlwaysCloseGSS {
 
     public void process(byte[] tokens) {
+        GSSContext context = null;
         try {
             byte[] inputBuff = new byte[256];
-            GSSManager.getInstance().createContext(tokens).initSecContext(inputBuff, 0, 256);
+            context = GSSManager.getInstance().createContext(tokens);
+            context.initSecContext(inputBuff, 0, 256);
             // ...
         } catch (Exception ioe) {
             System.out.println("Exception occured: " + ioe);
+        } finally {
+            if (context != null) {
+                context.dispose();
+            }
         }
     }
 
