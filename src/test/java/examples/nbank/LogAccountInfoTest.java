@@ -36,4 +36,5 @@ public class LogAccountInfoTest
         assertTrue(result);
 
     }
+
 }
