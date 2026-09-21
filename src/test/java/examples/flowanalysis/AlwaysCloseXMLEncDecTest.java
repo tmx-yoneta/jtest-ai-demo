@@ -100,4 +100,5 @@ public class AlwaysCloseXMLEncDecTest
         underTest.storeClose(out, objects);
 
     }
+
 }
