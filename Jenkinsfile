@@ -166,10 +166,19 @@ pipeline {
             $counterFile = ".jtest-ai-fix-attempts"
             $maxAttempts = [int]$env:JTEST_AI_FIX_MAX_ATTEMPTS
             $attempts = 0
+            # Jenkinsのワークスペースはビルドごとに使い回されるため、以前のビルドでai-fix/*
+            # ブランチをfetchした際のローカル追跡refが残っている場合がある。リモートで
+            # ブランチが削除された後にfetchが失敗しても、この古いrefは自動では消えず、
+            # 後続のgit showが古い（誤った）カウンタ値を返してしまう（不具合#23）。
+            # そのため、fetch前に明示的に削除してから改めてfetchし、fetch自体が成功した
+            # 場合のみgit showの結果を信頼する。
+            git update-ref -d "refs/remotes/origin/ai-fix/$env:CHANGE_ID" 2>$null | Out-Null
             git fetch origin "ai-fix/$env:CHANGE_ID`:refs/remotes/origin/ai-fix/$env:CHANGE_ID" 2>$null | Out-Null
-            $existing = git show "origin/ai-fix/$env:CHANGE_ID`:$counterFile" 2>$null
-            if ($LASTEXITCODE -eq 0 -and $existing) {
-              $attempts = [int]$existing
+            if ($LASTEXITCODE -eq 0) {
+              $existing = git show "origin/ai-fix/$env:CHANGE_ID`:$counterFile" 2>$null
+              if ($LASTEXITCODE -eq 0 -and $existing) {
+                $attempts = [int]$existing
+              }
             }
             if ($attempts -ge $maxAttempts) {
               Write-Output "AI自動修正は既に${attempts}回実行済み（上限${maxAttempts}回）のため、今回はスキップします（Copilot使用量抑制のため）。"
