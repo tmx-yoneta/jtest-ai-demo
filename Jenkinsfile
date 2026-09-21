@@ -156,14 +156,36 @@ pipeline {
       environment {
         JTEST_COMMIT_FIXES           = 'true'
         JTEST_STATIC_NO_OF_MAX_FIXES = '5'
+        // 1回のPRに対してAI自動修正を無制限に繰り返すとCopilot使用量が際限なく増えるため、
+        // 同一PRでの実行回数に上限を設ける（不具合#22への対処と合わせて追加）。
+        JTEST_AI_FIX_MAX_ATTEMPTS    = '2'
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
           powershell '''
+            $counterFile = ".jtest-ai-fix-attempts"
+            $maxAttempts = [int]$env:JTEST_AI_FIX_MAX_ATTEMPTS
+            $attempts = 0
+            git fetch origin "ai-fix/$env:CHANGE_ID`:refs/remotes/origin/ai-fix/$env:CHANGE_ID" 2>$null | Out-Null
+            $existing = git show "origin/ai-fix/$env:CHANGE_ID`:$counterFile" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $existing) {
+              $attempts = [int]$existing
+            }
+            if ($attempts -ge $maxAttempts) {
+              Write-Output "AI自動修正は既に${attempts}回実行済み（上限${maxAttempts}回）のため、今回はスキップします（Copilot使用量抑制のため）。"
+              exit 0
+            }
+
             git checkout -B "ai-fix/$env:CHANGE_ID"
             $env:JTEST_STATIC_BASE_REPORT = "$env:WORKSPACE\\build\\jtest\\report.xml"
             $prompt = "Use jtest-static-analysis to fix at most 5 violations. Do not run build or Jtest analysis (already provided). Commit each fix separately."
             & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
+
+            $newAttempts = $attempts + 1
+            Write-Output "AI自動修正 ${newAttempts}/${maxAttempts} 回目を実行しました。"
+            Set-Content -Path $counterFile -Value $newAttempts -NoNewline
+            git add $counterFile
+            git commit -q -m "chore: record AI-fix attempt $newAttempts/$maxAttempts" --allow-empty
             & .\\scripts\\git-push-with-pat.ps1 -Branch "ai-fix/$env:CHANGE_ID"
           '''
         }
