@@ -32,7 +32,9 @@ public class AlwaysCloseGSS {
             System.out.println("Exception occured: " + ioe);
         } finally {
             try {
-                context.dispose();
+                if (context != null) {
+                    context.dispose();
+                }
             } catch (Exception e) {
             }
         }
