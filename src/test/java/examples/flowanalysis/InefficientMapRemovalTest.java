@@ -137,4 +137,5 @@ public class InefficientMapRemovalTest
         assertEquals(0, map.size());
 
     }
+
 }
