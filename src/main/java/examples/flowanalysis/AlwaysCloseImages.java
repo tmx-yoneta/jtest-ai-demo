@@ -15,6 +15,10 @@ public class AlwaysCloseImages {
             image = imgReader.read(0);
         } catch (Exception e) {
             System.out.println("Exception occured: " + e);
+        } finally {
+            if (imgReader != null) {
+                imgReader.dispose();
+            }
         }
         return image;
     }
