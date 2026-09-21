@@ -45,4 +45,5 @@ public class AlwaysCloseNIOChannelsTest
         underTest.processClose(filename);
 
     }
+
 }
