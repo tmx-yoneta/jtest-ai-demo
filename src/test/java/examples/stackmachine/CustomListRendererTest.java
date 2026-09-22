@@ -31,4 +31,5 @@ public class CustomListRendererTest
         underTest.paint(g);
 
     }
+
 }

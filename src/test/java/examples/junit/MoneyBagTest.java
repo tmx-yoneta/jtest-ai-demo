@@ -416,4 +416,5 @@ public class MoneyBagTest
         assertEquals(1, result.chars().filter(ch -> ch == ',').count());
 
     }
+
 }

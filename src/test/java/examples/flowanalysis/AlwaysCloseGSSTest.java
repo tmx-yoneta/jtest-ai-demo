@@ -47,4 +47,5 @@ public class AlwaysCloseGSSTest
         underTest.processClose(tokens);
 
     }
+
 }

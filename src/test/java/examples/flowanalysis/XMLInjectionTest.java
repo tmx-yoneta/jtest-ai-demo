@@ -40,4 +40,5 @@ public class XMLInjectionTest
         underTest.createXMLDocumentAndStoreData(document, sUserId, sUserName, sDataType, sData);
 
     }
+
 }

@@ -420,4 +420,50 @@ public class AccountTest
         assertEquals("platinum", underTest.getStatus());
 
     }
+
+    /**
+     * Parasoft Jtest UTA: Test for getCustomer()
+     *
+     * @see examples.nbank.Account#getCustomer()
+     * @author yoneta
+     */
+    @Test(timeout = 5000)
+    public void testGetCustomer2() throws Throwable
+    {
+        // Given
+        Customer customer = mock(Customer.class);
+        int initial_balance = 0; // UTA: 設定値
+        Account underTest = new Account(customer, initial_balance);
+
+        // When
+        Customer result = underTest.getCustomer();
+
+    }
+
+    /**
+     * Parasoft Jtest UTA: Test for getStatus()
+     *
+     * @see examples.nbank.Account#getStatus()
+     * @author yoneta
+     */
+    @Test(timeout = 5000)
+    public void testGetStatus2() throws Throwable
+    {
+        // Given
+        Customer customer = mock(Customer.class);
+        int initial_balance = 0; // UTA: 設定値
+        Account underTest = new Account(customer, initial_balance);
+
+        // When
+        String result = underTest.getStatus();
+
+        // Then - メソッド getStatus() の結果 のアサーション
+        assertEquals("silver", result);
+
+        // Then - Account の this インスタンス のアサーション
+        assertNotNull(underTest.getCustomer());
+        assertEquals(0, underTest.getBalance());
+
+    }
+
 }
