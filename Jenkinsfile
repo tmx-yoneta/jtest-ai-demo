@@ -112,20 +112,23 @@ pipeline {
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'github-jtest-ai-pat', usernameVariable: 'PAT_USER', passwordVariable: 'PAT_TOKEN')]) {
-          // JTEST_REFERENCE_BRANCH（スキル内部のgit差分スコープ機能）は不具合#21のため使わず、
-          // 「A: 差分スコープ静的解析」と同じくPowerShell側で計算した変更ファイル一覧を
-          // JTEST_RESOURCE経由でスキルに渡す（スキルはこれをそのまま-Djtest.resourcesに変換する）。
-          powershell '''
-            git fetch origin main:refs/remotes/origin/main
-            $changedFiles = git diff --name-only origin/main...HEAD -- "*.java"
-            $changed = (($changedFiles | ForEach-Object { "**/$_" }) -join ",")
-            if ($changed) {
-              $env:JTEST_RESOURCE = $changed
+          // 直前の「A: 差分スコープ静的解析」ステージが、同じ差分に対して既にJtest解析を
+          // 実行済み（build/jtest/report.xml）。JTEST_RESOURCEで差分ファイルを渡して
+          // スキルにもう一度同じ解析をやり直させるのではなく、シナリオB（B: AI自動修正）と
+          // 同じ方式で、既存のreport.xmlをJTEST_STATIC_BASE_REPORTとしてそのまま渡すことで
+          // 解析の重複を避け、Copilotのトークン・時間消費を削減する。
+          script {
+            if (fileExists('build/jtest/report.xml')) {
+              powershell '''
+                $env:JTEST_STATIC_BASE_REPORT = "$env:WORKSPACE\\build\\jtest\\report.xml"
+                $prompt = "Use jtest-static-analysis to fix at most 3 violations. Do not run build or Jtest analysis (already provided). Commit each fix separately."
+                & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
+                & .\\scripts\\git-push-with-pat.ps1 -Branch $env:BRANCH_NAME
+              '''
+            } else {
+              echo '「A: 差分スコープ静的解析」でJtest解析がスキップされた（差分にJavaファイルの変更なし）ため、AI修正提案もスキップします。'
             }
-            $prompt = "Use jtest-static-analysis to fix at most 3 violations introduced relative to main. Commit each fix separately."
-            & .\\scripts\\invoke-copilot.ps1 -Prompt $prompt
-            & .\\scripts\\git-push-with-pat.ps1 -Branch $env:BRANCH_NAME
-          '''
+          }
         }
       }
     }
