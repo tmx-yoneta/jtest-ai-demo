@@ -23,6 +23,16 @@ pipeline {
     PYTHON_EXE                 = 'C:\\Users\\yoneta\\AppData\\Local\\Programs\\Python\\Python313\\python.exe'
   }
   stages {
+    // ジョブのワークスペースはビルドごとに使い回される。ai-fix/*やuta/coverage-boost/*ステージは
+    // powershell内で直接git checkout -Bしてブランチを切り替えるため、JenkinsのSCMチェックアウトが
+    // 関知しないまま生成物（テストファイル等）が未追跡ファイルとしてワークスペースに残ることがある
+    // （不具合#24）。次のビルドでそれらが誤ってビルド・テスト対象に混入するのを防ぐため、
+    // 毎ビルドの最初に未追跡ファイルを確実に除去する。
+    stage('0: ワークスペースクリーン') {
+      steps {
+        powershell 'git clean -fdx'
+      }
+    }
     // ── シナリオA：featureブランチへのpush（PRでもmainでもないビルド） ──
     stage('A: コンパイル') {
       when {
