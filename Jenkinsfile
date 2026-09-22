@@ -147,7 +147,33 @@ pipeline {
         expression { env.CHANGE_ID != null }
       }
       steps {
-        powershell '.\\mvnw -B test'
+        script {
+          // シナリオE（jtest-ai-tia-baseline、週次cron）が生成したmain上のベースライン
+          // （report.xml／coverage.xml）を取得し、TIA（Test Impact Analysis）で
+          // 変更の影響を受けるテストだけを実行する。ベースラインが未生成/取得失敗の場合は
+          // 通常のフルテストにフォールバックする。
+          try {
+            copyArtifacts(
+              projectName: 'jtest-ai-demo/jtest-ai-tia-baseline',
+              selector: lastSuccessful(),
+              filter: 'tia/report.xml,tia/coverage.xml',
+              target: 'tia-baseline',
+              flatten: true,
+              optional: true,
+            )
+          } catch (e) {
+            echo "シナリオEのベースライン取得に失敗したため、フルテストにフォールバックします: ${e}"
+          }
+        }
+        powershell '''
+          if (Test-Path "tia-baseline/report.xml" -PathType Leaf) {
+            Write-Output "TIA(Test Impact Analysis)により、変更の影響を受けるテストのみ実行します。"
+            .\\mvnw.cmd tia:affected-tests test "-Djtest.referenceReportFile=tia-baseline/report.xml" "-Djtest.referenceCoverageFile=tia-baseline/coverage.xml" "-Djtest.runFailedTests=false" "-Djtest.runModifiedTests=true"
+          } else {
+            Write-Output "TIAベースラインが見つからないため、フルテストを実行します。"
+            .\\mvnw.cmd -B test
+          }
+        '''
       }
     }
     stage('B: Jtest静的解析') {
