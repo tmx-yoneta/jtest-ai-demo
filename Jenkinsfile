@@ -185,10 +185,6 @@ pipeline {
         recordIssues tools: [parasoftFindings(pattern: 'build/jtest/report.xml')], id: 'jtest-findings'
       }
     }
-    // リポジトリ・ブランチ整理中に誤ってPRビルドが走ってもCopilotが起動しないよう、
-    // 「B: AI自動修正」を一時的に無効化（「C: ユニットテスト自動生成」と同じ方式）。
-    // 整理作業が終わったら下記stageブロックのコメントを外して再度有効化する。
-    /*
     stage('B: AI自動修正') {
       when {
         allOf {
@@ -243,7 +239,6 @@ pipeline {
         }
       }
     }
-    */
     stage('B: PR通知') {
       when {
         allOf {
