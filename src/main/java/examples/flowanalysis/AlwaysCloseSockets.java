@@ -24,9 +24,12 @@ public class AlwaysCloseSockets {
         } catch (IOException ioe) {
             System.out.println("Exception occured: " + ioe);
         } finally {
-            try {
-                sock.close();
-            } catch (Exception e) {
+            if (sock != null) {
+                try {
+                    sock.close();
+                } catch (IOException e) {
+                    System.out.println("Exception occured: " + e);
+                }
             }
         }
     }
