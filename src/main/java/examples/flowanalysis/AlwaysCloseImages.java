@@ -33,7 +33,9 @@ public class AlwaysCloseImages {
         } catch (Exception e) {
             System.out.println("Exception occured: " + e);
         } finally {
-            imgReader.dispose();
+            if (imgReader != null) {
+                imgReader.dispose();
+            }
         }
         return image;
     }
