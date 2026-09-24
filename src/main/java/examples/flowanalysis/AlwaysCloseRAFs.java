@@ -6,8 +6,7 @@ public class AlwaysCloseRAFs {
 
     public String read(String sFileName, String sMode, int offset) {
         String res = null;
-        try {
-            RandomAccessFile raf = new RandomAccessFile(sFileName, sMode);
+        try (RandomAccessFile raf = new RandomAccessFile(sFileName, sMode)) {
             byte[] bytes = new byte[512];
             int read = raf.read(bytes, offset, bytes.length);
             res = new String(bytes);
