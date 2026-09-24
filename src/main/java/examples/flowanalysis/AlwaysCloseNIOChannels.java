@@ -32,7 +32,9 @@ public class AlwaysCloseNIOChannels {
             System.out.println("Exception occured: " + ioe);
         } finally {
             try {
-                channel.close();
+                if (channel != null) {
+                    channel.close();
+                }
             } catch (Exception e) {
             }
         }
