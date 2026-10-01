@@ -29,11 +29,15 @@ public class AlwaysCloseImages {
         ImageReader imgReader = null;
         try {
             imgReader = spi.createReaderInstance();
-            image = imgReader.read(0);
+            if (imgReader != null) {
+                image = imgReader.read(0);
+            }
         } catch (Exception e) {
             System.out.println("Exception occured: " + e);
         } finally {
-            imgReader.dispose();
+            if (imgReader != null) {
+                imgReader.dispose();
+            }
         }
         return image;
     }
