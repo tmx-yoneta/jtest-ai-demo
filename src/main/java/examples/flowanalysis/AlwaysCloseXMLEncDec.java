@@ -49,7 +49,9 @@ public class AlwaysCloseXMLEncDec {
         } catch (Exception e) {
             System.out.println("Exception occured: " + e);
         } finally {
-            encoder.close();
+            if (encoder != null) {
+                encoder.close();
+            }
         }
     }
 
