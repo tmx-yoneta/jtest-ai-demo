@@ -9,8 +9,7 @@ import java.nio.channels.FileChannel;
 public class AlwaysCloseNIOChannels {
 
     public void process(String filename) {
-        try {
-            FileInputStream fInput = new FileInputStream(filename);
+        try (FileInputStream fInput = new FileInputStream(filename)) {
             FileChannel channel = fInput.getChannel();
             ByteBuffer dst = ByteBuffer.allocate(512);
             int read = channel.read(dst);
