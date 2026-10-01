@@ -8,8 +8,7 @@ import java.net.Socket;
 public class AlwaysCloseSockets {
 
     public void connectClient(ServerSocket srvSocket) {
-        try {
-            Socket sock = srvSocket.accept();
+        try (Socket sock = srvSocket.accept()) {
             // ... communicate with client socket ...
         } catch (IOException ioe) {
             System.out.println("Exception occured: " + ioe);
