@@ -13,9 +13,11 @@ public class ResourceLeakDemo2 {
         } catch (IOException ioe) {
             System.out.println("Exception occured: " + ioe);
         } finally {
-            try {
-                sock.close();
-            } catch (Exception e) {
+            if (sock != null) {
+                try {
+                    sock.close();
+                } catch (Exception e) {
+                }
             }
         }
     }
