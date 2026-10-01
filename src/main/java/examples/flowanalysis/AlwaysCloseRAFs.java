@@ -28,9 +28,11 @@ public class AlwaysCloseRAFs {
         } catch (Exception e) {
             System.out.println();
         } finally {
-            try {
-                raf.close();
-            } catch (Exception e) {
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (Exception e) {
+                }
             }
         }
         return res;
